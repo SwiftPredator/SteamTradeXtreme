@@ -1,0 +1,45 @@
+<Row@BoxLayout>:
+    orientation: 'horizontal'
+    Label: 
+        pos_hint: {"center_y": 0.5}
+        size_hint: 1, None
+    TextInput:
+        multiline: False
+        size_hint: 1, None
+        pos_hint: {"center_y": 0.5}
+
+<MainView>:
+    BoxLayout:
+        orientation: 'vertical'
+        BoxLayout:
+            orientation: 'horizontal'
+            Label:
+                text: 'Steam-Login:'
+                size_hint: 1, None
+                pos_hint: {"center_y": 0.5}
+            TextInput:
+                hint_text: "Username"
+                multiline: False
+                size_hint: 1, None
+                pos_hint: {"center_y": 0.5}
+            TextInput:
+                hint_text: "Password"
+                multiline: False
+                size_hint: 1, None
+                pos_hint: {"center_y": 0.5}
+        Button:
+            text: "Start Session!"
+            size: [32,32] 
+            size_hint: [0.5,0.5]
+            on_release: root.__start()
+    BoxLayout:
+        orientation: 'vertical'
+
+        Label:
+            text: 'Trading Bot Output'
+        
+    BoxLayout:
+        orientation: 'vertical'
+
+        Label:
+            text: 'Hallo3'
