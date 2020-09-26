@@ -2,7 +2,7 @@ import tkinter as tk
 import tradeHandler as th
 import scraper as scpr
 import autoposter as ap
-from utils import GameOptions, text_between, account_id_to_steam_id, steam_id_to_account_id, reverseDict, get_value_in_nested_dict
+from utils import GameOptions, text_between, account_id_to_steam_id, steam_id_to_account_id, reverseDict, get_value_in_nested_dict, resource_path
 from models import PriceAPIEndpoint, GameOptions, IntervalTimer
 import sched, time
 import PySimpleGUI as sg
@@ -14,7 +14,7 @@ import json
 class GUI():
 
     def __init__(self):
-       self.config = self.__readConfig('./config.json')
+       self.config = self.__readConfig(resource_path('config.json'))
        self.handler = None
        self.scraper = None
 

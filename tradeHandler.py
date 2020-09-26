@@ -18,11 +18,11 @@ from selenium.common.exceptions import TimeoutException
 from models import Asset, TradeOfferState, SteamUrl, GameOptions, Currency, PriceAPIEndpoint, InventoryType
 from utils import text_between, texts_between, merge_items_with_descriptions_from_inventory, \
     steam_id_to_account_id, merge_items_with_descriptions_from_offers, get_description_key, \
-    merge_items_with_descriptions_from_offer, account_id_to_steam_id, get_key_value_from_url, parse_price, reverseDict
+    merge_items_with_descriptions_from_offer, account_id_to_steam_id, get_key_value_from_url, parse_price, reverseDict, resource_path
 
 class TradeHandler:
 
-    def __init__(self, api_endpoint: PriceAPIEndpoint, config_path="./config.json"):
+    def __init__(self, api_endpoint: PriceAPIEndpoint, config_path=resource_path("config.json")):
         self.config = self.readConfig(config_path)
         self._session = requests.Session()
         self._price_endpoint = api_endpoint

@@ -1,14 +1,14 @@
 from bs4 import BeautifulSoup
 import requests
 import json
-from utils import account_id_to_steam_id, text_between
+from utils import account_id_to_steam_id, text_between, resource_path
 from selenium import webdriver
 import time
 
 class Scraper:
 
     def __init__(self, config_path="./config.json"):
-        self.comment_urls, self.thread_urls = self.__getGroupURLs(config_path)
+        self.comment_urls, self.thread_urls = self.__getGroupURLs(resource_path(config_path))
 
     @staticmethod
     def __getGroupURLs(config_path):

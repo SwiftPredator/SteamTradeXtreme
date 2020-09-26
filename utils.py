@@ -7,7 +7,7 @@ import urllib.parse as urlparse
 import re
 from requests.structures import CaseInsensitiveDict
 from typing import List
-
+import sys
 from bs4 import BeautifulSoup, Tag
 
 from steampy.models import GameOptions
@@ -187,6 +187,11 @@ def get_value_in_nested_dict(dic, key):
             yield v
         elif isinstance(v, dict):
             yield from get_value_in_nested_dict(v, key)
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
         
 
 class Credentials:
