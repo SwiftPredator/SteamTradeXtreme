@@ -44,13 +44,13 @@ class TradeHandler:
             ele_login = self.steamClient.find_element_by_id(login_data["login_button_id"])
             self.driverSetValuesInput((ele_username, login_data["username"]), (ele_password, login_data["password"]))
             ele_login.click()
-            wait = WebDriverWait(self.steamClient, 60)
-            wait.until(EC.url_contains("/profiles") or EC.url_contains("/id"))
-            cookies = self.steamClient.get_cookies()
-            for cookie in cookies:
-                self._session.cookies.set(cookie['name'], cookie['value'])
-        except TimeoutException as t:
-             print("Exception has been thrown. " + str(t))
+            wait = WebDriverWait(self.steamClient, 30)
+            wait.until(EC.url_contains("/profiles"))
+        except TimeoutException:
+            print("Exception has been thrown. Trying to get cookies anyways. If you have a special id set on your steam it will work anyways")
+        cookies = self.steamClient.get_cookies()
+        for cookie in cookies:
+            self._session.cookies.set(cookie['name'], cookie['value'])
         self.steamClient.close()
         return self._session
 
