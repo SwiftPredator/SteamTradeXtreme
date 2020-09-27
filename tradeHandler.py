@@ -45,7 +45,7 @@ class TradeHandler:
             self.driverSetValuesInput((ele_username, login_data["username"]), (ele_password, login_data["password"]))
             ele_login.click()
             wait = WebDriverWait(self.steamClient, 60)
-            wait.until(EC.url_contains("/profiles"))
+            wait.until(EC.url_contains("/profiles") or EC.url_contains("/id"))
             cookies = self.steamClient.get_cookies()
             for cookie in cookies:
                 self._session.cookies.set(cookie['name'], cookie['value'])

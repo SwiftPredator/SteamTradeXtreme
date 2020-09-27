@@ -48,4 +48,5 @@ class AutoPoster:
           
 
     def _get_session_id(self) -> str:
+        print(self._session.cookies)
         return self._session.cookies.get_dict()['sessionid']
