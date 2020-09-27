@@ -36,13 +36,16 @@ class GUI():
             sg.Text('Max Upgrade'), sg.Spin([i for i in range(-50,50)], initial_value=self.__getTextFromConfig('max_margin_upgrade'), key='max_margin_upgrade')],
             [sg.Text('Avoid Items in MY Inventory:', size=[22, 1], font=("Helvetica", 15)), sg.Text('Avoid Items in THEIR Inventory:', size=[22, 1], font=("Helvetica", 15))],
             [sg.Listbox(values=self.__getTextFromConfig('my_inv'), size=(30,5), key='_LISTBOX_MY'), sg.Listbox(values=self.__getTextFromConfig('their_inv'), size=(30,5), key='_LISTBOX_THEIR')],
-            [sg.Button('Add', size=[14,1], key='_ADD_MY'), sg.Button('Delete', size=[14,1], key='_DELETE_MY'), sg.Button('Add', size=[14,1], key='_ADD_THEIR'), sg.Button('Delete', size=[14,1], key='_DELETE_THEIR')]
+            [sg.Button('Add', size=[14,1], key='_ADD_MY'), sg.Button('Delete', size=[14,1], key='_DELETE_MY'), sg.Button('Add', size=[14,1], key='_ADD_THEIR'), sg.Button('Delete', size=[14,1], key='_DELETE_THEIR')],
+            [sg.Text('Discussion Links:', size=[30, 1], font=("Helvetica", 15)), sg.Text('Comment Section Links:', size=[30, 1], font=("Helvetica", 15))],
+            [sg.Listbox(values=self.__getTextFromConfig('threads'), size=(40,10), key='_LISTBOX_THREADS'), sg.Listbox(values=self.__getTextFromConfig('comments'), size=(40,10), key='_LISTBOX_COMMENTS')],
+            [sg.Button('Add', size=[18,1], key='_ADD_THREAD'), sg.Button('Delete', size=[18,1], key='_DELETE_THREAD'), sg.Button('Add', size=[18, 1], key='_ADD_COMMENT'), sg.Button('Delete', size=[18,1], key='_DELETE_COMMENT')]
 
         ]
 
         settings_frame = [
             [sg.Frame('Settings', settings_column, font=("Helvetica", 20), title_color='white')],
-            [sg.Button('SAVE SETTINGS'), sg.Button('CREATE SESSION')]
+            [sg.Button('SAVE SETTINGS'), sg.Button('CREATE SESSION', button_color=(sg.YELLOWS[0], sg.BLUES[0]))]
         ]
         
         group_autowrite_column = [
@@ -137,25 +140,39 @@ class GUI():
         elif event == '_STOP_POSTER':
             self.__stop_auto_poster(window)
         elif event == '_ADD_MY':
-            item = sg.popup_get_text('Add new Element to avoid.')
-            self.config['trades']['avoid']['my_inv'].append(item)
-            window.Element('_LISTBOX_MY').update(values=self.config['trades']['avoid']['my_inv'])
+            self.__add_to_listbox('_LISTBOX_MY', 'Add new Element to avoid.', 'my_inv', values)
         elif event == '_DELETE_MY':
-            items = values['_LISTBOX_MY']
-            self.config['trades']['avoid']['my_inv'] = [x for x in self.config['trades']['avoid']['my_inv'] if x not in items]
-            window.Element('_LISTBOX_MY').update(values=self.config['trades']['avoid']['my_inv'])
+            self.__delete_from_listbox('_LISTBOX_MY', 'my_inv',  window, values)
         elif event == '_ADD_THEIR':
-            item = sg.popup_get_text('Add new Element to avoid.')
-            self.config['trades']['avoid']['their_inv'].append(item)
-            window.Element('_LISTBOX_THEIR').update(values=self.config['trades']['avoid']['their_inv'])
+            self.__add_to_listbox('_LISTBOX_THEIR', 'Add new Element to avoid.', 'their_inv', values)
         elif event == '_DELETE_THEIR':
-            items = values['_LISTBOX_THEIR']
-            self.config['trades']['avoid']['their_inv'] = [x for x in self.config['trades']['avoid']['their_inv'] if x not in items]
-            window.Element('_LISTBOX_THEIR').update(values=self.config['trades']['avoid']['their_inv'])
+            self.__delete_from_listbox('_LISTBOX_THEIR', 'their_inv',  window, values)
+        elif event == '_ADD_THREAD':
+            self.__add_to_listbox('_LISTBOX_THREADS', 'Add new Link.', 'threads', window)
+        elif event == '_DELETE_THREAD':
+            self.__delete_from_listbox('_LISTBOX_THREADS', 'threads',  window, values)
+        elif event == '_ADD_COMMENT':
+            self.__add_to_listbox('_LISTBOX_COMMENTS', 'Add new Link.', 'comments', window)
+        elif event == '_DELETE_COMMENT':
+            self.__delete_from_listbox('_LISTBOX_COMMENTS', 'comments',  window, values)
         elif event == 'EXIT' or event == sg.WIN_CLOSED:
             return False
 
         return True
+
+    def __add_to_listbox(self, listboxid, poptext, configpath, window):
+        item = sg.popup_get_text(poptext)
+        config_value = self.__getTextFromConfig(configpath)
+        config_value.append(item)
+        window.Element(listboxid).update(values=config_value)
+
+    def __delete_from_listbox(self, listboxid, configpath, window, values):
+        items = values[listboxid]
+        config_value = self.__getTextFromConfig(configpath)
+        new_config_value = [x for x in config_value if x not in items]
+        window.Element(listboxid).update(values=new_config_value)
+        self.__updateConfig(self.config, configpath, new_config_value)
+        
     
     def __start_auto_poster(self, urls, title, message, freq, com=True, disc=True):
         thread = t.current_thread()

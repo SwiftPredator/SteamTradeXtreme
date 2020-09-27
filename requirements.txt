@@ -1,0 +1,13 @@
+pyotp==2.4.0
+steampy==0.62
+webdriver_manager==3.2.2
+steamid==1.0.2
+timeloop==1.0.2
+numpy==1.18.4
+xmltodict==0.12.0
+requests==2.23.0
+selenium==3.141.0
+python_valve==0.2.1
+beautifulsoup4==4.9.2
+PySimpleGUI==4.29.0
+valve==0.0.0
