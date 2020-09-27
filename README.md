@@ -20,7 +20,7 @@ python3 main.py
 ## Usage
 
 The UI is splitted in three parts as you can see in the following figure.
-![alt text](https://github.com/SwiftPredator/SteamTradeXtreme/blob/master/UI-image.png?raw=true)
+![alt text](https://github.com/SwiftPredator/SteamTradeXtreme/blob/master/images/UI-image.png?raw=true)
 
 In the left column you can edit the settings for the trading bot. 
 ```Before you can start the bot you have to create a session by clicking the Create Session button.``` 
