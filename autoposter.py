@@ -7,12 +7,14 @@ import itertools
 from bs4 import BeautifulSoup
 import requests
 from models import SteamUrl
+from utils import get_value_in_nested_dict, resource_path
 import xmltodict
 
 class AutoPoster:
     
     def __init__(self, session):
         self._session = session
+        self.config = self.__readConfig(resource_path('config.json'))
 
     def getGroupIDFromURL(self, url):
         req = requests.get(url+'/memberslistxml?xml=1')
@@ -20,7 +22,7 @@ class AutoPoster:
         return data['memberList']['groupID64']
 
     def postComments(self, urls, message):
-        for url, _ in urls.items():
+        for url in urls:
             session_id = self._get_session_id()
             post = 'https://steamcommunity.com/comment/Clan/post/'+self.getGroupIDFromURL(url)+'/-1/'
             params = {
@@ -34,7 +36,8 @@ class AutoPoster:
         return response
 
     def postDiscussion(self, urls, title, message):
-        for url, o_id in urls.items():
+        for url in urls:
+            o_id = next(get_value_in_nested_dict(self.config, url))
             session_id = self._get_session_id()
             url = 'https://steamcommunity.com/forum/'+o_id+'/General/createtopic/0/'
             params = {
@@ -50,3 +53,7 @@ class AutoPoster:
     def _get_session_id(self) -> str:
         print(self._session.cookies)
         return self._session.cookies.get_dict()['sessionid']
+
+    def __readConfig(self, path):
+        with open(path) as file:
+            return json.load(file)

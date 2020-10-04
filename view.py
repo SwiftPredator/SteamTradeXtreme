@@ -49,13 +49,19 @@ class GUI():
         ]
         
         group_autowrite_column = [
-            [sg.Text('Auto Trade Post Modul', size=[50, 2])],
-            [sg.HorizontalSeparator(pad=None)],
             [sg.InputText(self.__getTextFromConfig('title'), key='title')],
             [sg.Multiline(self.__getTextFromConfig('message'), size=(45, 5), key='message')],
+            [sg.Text('Available Groups:', size=[50, 1])],
+            [sg.Listbox(values=self.__getTextFromConfig('avb'), size=(45, 5), enable_events=True, key='_LISTBOX_A_POST_GROUPS')],
+            [sg.Text('Selected Groups:', size=[50, 1])], 
+            [sg.Listbox(values=self.__getTextFromConfig('sld'), size=(45, 5), enable_events=True, key='_LISTBOX_S_POST_GROUPS')],
             [sg.Text('Post Frequenz(s)'), sg.Spin([i for i in range(10,5000)], initial_value=self.__getTextFromConfig('freq'), key='freq')],
             [sg.Checkbox('Comments', default=True, key="p_comment"), sg.Checkbox('Discussions', key='p_discussion')],
-            [sg.HorizontalSeparator(pad=None)],
+            [sg.HorizontalSeparator(pad=None)]
+        ]
+
+        autoposter_frame = [
+            [sg.Frame('Auto Post Modul', group_autowrite_column, font=("Helvetica", 20), title_color='white')],
             [sg.Button('START POSTER', disabled=True, key='_START_POSTER'), sg.Button('STOP POSTER', disabled=True, key='_STOP_POSTER')]
         ]
 
@@ -63,7 +69,7 @@ class GUI():
             [
                 sg.Column(settings_frame, element_justification='l'), 
                 sg.VerticalSeparator(pad=None), sg.Column(output_column, element_justification='l'), 
-                sg.VerticalSeparator(pad=None), sg.Column(group_autowrite_column, element_justification='l') 
+                sg.VerticalSeparator(pad=None), sg.Column(autoposter_frame, element_justification='l') 
             ]
         ]
         window = sg.Window('', layout, default_element_size=(30, 2))
@@ -132,11 +138,25 @@ class GUI():
             global post_thread
             post_thread = t.Thread(
                 target=self.__start_auto_poster,
-                args=(self.__getTextFromConfig('autoposter'), title, message, freq, com, disc),
+                args=(self.__getTextFromConfig('sld'), title, message, freq, com, disc),
                 daemon=True
             )
             post_thread.start()
-            
+        
+        elif event == '_LISTBOX_A_POST_GROUPS':
+            s_values = values[event]
+            config_value = self.__getTextFromConfig('sld')
+            print(config_value)
+            if s_values not in config_value:
+                for s in s_values:
+                    config_value.append(s)
+                window.Element('_LISTBOX_S_POST_GROUPS').update(values=config_value)
+                self.__updateConfig(self.config, 'sld', config_value)
+        elif event == '_LISTBOX_S_POST_GROUPS':
+            s_values = values[event]
+            config_value = [x for x in self.__getTextFromConfig('sld') if x not in s_values]
+            window.Element('_LISTBOX_S_POST_GROUPS').update(values=config_value)
+            self.__updateConfig(self.config, 'sld', config_value)
         elif event == '_STOP_POSTER':
             self.__stop_auto_poster(window)
         elif event == '_ADD_MY':
@@ -176,7 +196,7 @@ class GUI():
     
     def __start_auto_poster(self, urls, title, message, freq, com=True, disc=True):
         thread = t.current_thread()
-        counter = freq #Set to frequnz for instant searching when calling the method 
+        counter = freq #Set to frequnz for instant searching when calling the method
         while getattr(thread, "do_run", True):
             if counter >= freq:
                 print("Posted new Comment and Thread in all groups!")
