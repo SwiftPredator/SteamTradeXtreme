@@ -47,10 +47,15 @@ class GameOptions:
 class PriceAPIEndpoint(enum.IntEnum):
     BITSKINS = 1
     STEAMAPIS = 2
+    INTERN = 3
 
 class InventoryType(enum.IntEnum):
     MY = 1,
     THEIR = 2
+
+class TradingStrategy(enum.IntEnum):
+    BOT = 1,
+    USER = 2
 
 class Asset:
     def __init__(self, asset_id: str, game: GameOptions, amount: int = 1) -> None:

@@ -32,7 +32,10 @@ class Scraper:
                 if trade_link['href'].find('?partner=') == -1:
                     continue
                 elif split_sub == "id/": #Extract id from trade link
-                    steam_id = account_id_to_steam_id(text_between(trade_link['href'], '?partner=', '&'))
+                    try:
+                        steam_id = account_id_to_steam_id(text_between(trade_link['href'], '?partner=', '&'))
+                    except:
+                        continue
                 else:
                     steam_id = profile_link.split(split_sub)[1]
                 #steam_id = steam_id if split_sub == "profiles/" else account_id_to_steam_id(steam_id)

@@ -2,14 +2,16 @@ import tkinter as tk
 import tradeHandler as th
 import scraper as scpr
 import autoposter as ap
-from utils import GameOptions, text_between, account_id_to_steam_id, steam_id_to_account_id, reverseDict, get_value_in_nested_dict, resource_path
-from models import PriceAPIEndpoint, GameOptions, IntervalTimer
+from utils import GameOptions, text_between, account_id_to_steam_id, steam_id_to_account_id, reverseDict, get_value_in_nested_dict, resource_path, log_status
+from models import PriceAPIEndpoint, GameOptions, IntervalTimer, TradingStrategy
 import sched, time
 import PySimpleGUI as sg
 import  threading as t
 from timeloop import Timeloop
 from datetime import timedelta
 import json
+import random
+import traceback
 
 class GUI():
 
@@ -22,13 +24,23 @@ class GUI():
         output_column = [
                 [sg.Text('Auto Trade Finder Modul', size=[50, 2])],
                 [sg.HorizontalSeparator(pad=None)],
-                [sg.Output(size=(100, 30))],
+                [sg.Text('Your Inventory:', size=[50, 2]), sg.Text('Items to trade:', size=[50, 2])],
+                [sg.Listbox(values=[], size=[50, 15], enable_events=True, key='_AVA_ITEMS'), sg.Listbox(values=[], size=[50, 15], enable_events=True, key='_SEL_ITEMS')],
+                [sg.Radio('Let Bot select items', "RADIO1", default=True, key='_bot_trade'), sg.Radio('Take user choosen items', "RADIO1", key='_user_trade')],
+                [sg.Text('Trade Message:', size=[50, 2])],
+                [sg.Multiline(self.__getTextFromConfig('trade_message'), size=(100, 4), key='_trade_message')],
+                [sg.HorizontalSeparator(pad=None)],
+                [sg.Text('Information-Output:', size=(50, 2))],
+                [sg.Output(size=(100, 20))],
                 [sg.Button('START', disabled=True, button_color=(sg.YELLOWS[0], sg.BLUES[0])),
                 sg.Button('STOP', disabled=True, button_color=(sg.YELLOWS[0], sg.GREENS[0]))]
                 ]
         settings_column = [ 
+            [sg.Text('SteamID: '), sg.Input(self.__getTextFromConfig('steam_id'), key='steam_id')],
             [sg.Text('Login Info:', size=[30, 1], font=("Helvetica", 15))],
             [sg.Text('Username: '), sg.Input(self.__getTextFromConfig('username'), key='username'), sg.Text('Password: '), sg.Input(self.__getTextFromConfig('password'), key='password')],
+            [sg.Text('Price-API Info:', size=[30, 1], font=("Helvetica", 15))],
+            [sg.Combo(['Intern Price-List(no regular update)', 'steamapis.com'], default_value=self.__getTextFromConfig('api_method'), key='api_method'), sg.Text('Key(only for steamapis):'), sg.Input(self.__getTextFromConfig('api_key'), key='api_key')],
             [sg.Text('Margins:', size=[30,1], font=("Helvetica", 15))],
             [sg.Text('Min Downgrade'), sg.Spin([i for i in range(-50,50)], initial_value=self.__getTextFromConfig('min_margin_downgrade'), key='min_margin_downgrade'), 
             sg.Text('Max Downgrade'), sg.Spin([i for i in range(-50,50)], initial_value=self.__getTextFromConfig('max_margin_downgrade'), key='max_margin_downgrade')],
@@ -85,23 +97,19 @@ class GUI():
 
     def __event_handler(self, event, values, window)->bool:
         if event == 'START':
-            print("""
-                (                                                             )                                                   
-                )\ )    )                     *   )             (          ( /(     )                                  )      )   
-                (()/( ( /(   (     )     )   ` )  /( (       )   )\ )   (   )\()) ( /( (      (     )      (     )   ( /(   ( /(   
-                /(_)))\()) ))\ ( /(    (     ( )(_)))(   ( /(  (()/(  ))\ ((_)\  )\()))(    ))\   (      ))\   /((  )\())  )\())  
-                (_)) (_))/ /((_))(_))   )\  '(_(_())(()\  )(_))  ((_))/((_)__((_)(_))/(()\  /((_)  )\  ' /((_) (_))\((_)\  ((_)\   
-                / __|| |_ (_)) ((_)_  _((_)) |_   _| ((_)((_)_   _| |(_))  \ \/ /| |_  ((_)(_))  _((_)) (_))   _)((_)/ (_) /  (_)  
-                \__ \|  _|/ -_)/ _` || '  \()  | |  | '_|/ _` |/ _` |/ -_)  >  < |  _|| '_|/ -_)| '  \()/ -_)  \ V / | | _| () |   
-                |___/ \__|\___|\__,_||_|_|_|   |_|  |_|  \__,_|\__,_|\___| /_/\_\ \__||_|  \___||_|_|_| \___|   \_/  |_|(_)\__/                                                                                                                   
-                """)
             window.FindElement('START').Update(disabled=True)
             window.FindElement('STOP').Update(disabled=False)
+            for k, v in values.items():
+                self.config = self.__updateConfig(self.config, k, v)
+            self.__writeConfig()
             inv = self.handler.get_my_inventory(GameOptions.CS)
+            t_message = values['_trade_message']
+            trade_strategy = TradingStrategy.BOT if values['_bot_trade'] else TradingStrategy.USER
+            selected_items = window.Element('_SEL_ITEMS').get_list_values()
             global thread
             thread = t.Thread(
                 target=self.__start,
-                args=(self.scraper, self.handler, inv, window),
+                args=(self.scraper, self.handler, inv, window, trade_strategy, selected_items, t_message),
                 daemon=True
             )
             thread.start()
@@ -117,12 +125,14 @@ class GUI():
             self.__writeConfig()
             sg.popup('Settings saved!')
         elif event == 'CREATE SESSION':
-            self.handler = th.TradeHandler(PriceAPIEndpoint.STEAMAPIS)
+            api = PriceAPIEndpoint.STEAMAPIS if values['api_method'] == 'steamapis.com' else PriceAPIEndpoint.INTERN
+            self.handler = th.TradeHandler(api)
             self.scraper = scpr.Scraper()
             _session = self.handler.loginSteam()
             self.poster = ap.AutoPoster(_session)
             window.FindElement('START').Update(disabled=False)
             window.FindElement('_START_POSTER').Update(disabled=False)
+            self.__updateInventoryListBox(window)
         elif event == '_START_POSTER':
             print("Starting to Post Comments and Discussions!")
             window.FindElement('_START_POSTER').Update(disabled=True)
@@ -142,11 +152,22 @@ class GUI():
                 daemon=True
             )
             post_thread.start()
-        
+        elif event == '_AVA_ITEMS':
+            s_values = values[event]
+            o_values = window.Element('_SEL_ITEMS').get_list_values()
+            for s in s_values:
+                if s not in o_values:
+                    o_values.append(s)
+            window.Element('_SEL_ITEMS').Update(values=o_values)
+        elif event == '_SEL_ITEMS':
+            s_values = values[event]
+            o_values = window.Element('_SEL_ITEMS').get_list_values()
+            for s in s_values:
+                o_values.remove(s)
+            window.Element('_SEL_ITEMS').update(values=o_values)
         elif event == '_LISTBOX_A_POST_GROUPS':
             s_values = values[event]
             config_value = self.__getTextFromConfig('sld')
-            print(config_value)
             if s_values not in config_value:
                 for s in s_values:
                     config_value.append(s)
@@ -199,11 +220,11 @@ class GUI():
         counter = freq #Set to frequnz for instant searching when calling the method
         while getattr(thread, "do_run", True):
             if counter >= freq:
-                print("Posted new Comment and Thread in all groups!")
+                log_status("Posted new Comment and Thread in all selected groups!")
                 time.sleep(5)
                 if com:
                     self.poster.postComments(urls, message)
-                time.sleep(2)
+                time.sleep(15)
                 if disc:
                     self.poster.postDiscussion(urls, title, message)
                 counter = 0
@@ -216,15 +237,14 @@ class GUI():
         window.FindElement('_START_POSTER').Update(disabled=False)
         window.FindElement('_STOP_POSTER').Update(disabled=True)
 
-    def __start(self, scraper, handler, inv, window):
+    def __start(self, scraper, handler, inv, window, trade_strategy, selected_items, t_message):
         thread = t.current_thread()
         counter = 180 #Set to frequnz for instant searching when calling the method 
+        log_status("Searching for trades...")
         while getattr(thread, "do_run", True):
             if counter >= 180: #search frequenz in seconds
                 #Get Trade Links and SteamIds
                 trade_urls = {**scraper.getTradeURLsComments(), **scraper.getTradeURLsThreads()}
-                #Get user inventory
-                print("Start Searching")
                 trade_counter = 0
                 for steam_id, url in trade_urls.items():
                     if url in handler.get_session_trades():
@@ -233,31 +253,38 @@ class GUI():
                         handler.append_session_trade(url)
                     try:
                         partner_inv = handler.get_partner_inventory(steam_id, GameOptions.CS, merge=True)
-                        trade = handler.calculateOptimalTrade(inv, partner_inv)
+                        trade = handler.calculateOptimalTrade(inv, partner_inv, trade_strategy, selected_items)
                         if trade is not None:
-                            message = "Hey, im interested in your items and i think i made a fair offer. If you want to discuss please add me or send a counter-offer."
+                            message = t_message
                             handler.make_offer_with_url(trade["my_items"], trade["their_items"], url, message=message)
                             trade_counter += 1
+                            log_status("Created trade for you!")
                     except Exception as e:
-                        print("Error in creating trade. Message: {}".format(str(e)))
-                print("End Searching for this period. Found: {} possible trades.".format(trade_counter))
+                        log_status("Error in creating trade. Message: {}".format(str(e)))
+                        #traceback.print_exc()
+                log_status("End Searching for this period. Found: {} possible trades! Check your mobile App!".format(trade_counter))
                 counter = 0
             time.sleep(1)
             counter += 1 
 
     def __stop(self, window):
-        print("Stopped the Bot")
+        log_status("Stopped the Trading-Bot!")
         thread.do_run = False
         thread.join()
         window.FindElement('START').Update(disabled=False)
         window.FindElement('STOP').Update(disabled=True)
+
+
+    def __updateInventoryListBox(self, window):
+        inv = self.handler.get_my_inventory(GameOptions.CS)
+        window.FindElement('_AVA_ITEMS').Update(values=[x['market_hash_name'] for x in inv.values() if x["tradable"]])
 
     def __readConfig(self, path):
         with open(path) as file:
             return json.load(file)
 
     def __writeConfig(self):
-        with open('./config.json', 'w') as outfile:
+        with open(resource_path('config.json'), 'w') as outfile:
                 json.dump(self.config, outfile)
 
     def __getTextFromConfig(self, key):

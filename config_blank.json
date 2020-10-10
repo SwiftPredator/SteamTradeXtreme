@@ -1,0 +1,97 @@
+{
+    "steam_data": {
+        "login": {
+            "steam_id": "",
+            "steam_api_key": "",
+            "username": "",
+            "password": "",
+            "url": "https://steamcommunity.com/login/home/",
+            "username_id": "steamAccountName",
+            "password_id": "steamPassword",
+            "login_button_id": "SteamLogin"
+        }
+    },
+    "groups": {
+        "urls": {
+            "autotrader": {
+                "comments": [
+                    "https://steamcommunity.com/groups/CSGOTrader/comments",
+                    "https://steamcommunity.com/groups/csgolounge/comments",
+                    "https://steamcommunity.com/groups/freeetrade/comments",
+                    "https://steamcommunity.com/groups/tradecenter2016/comments",
+                    "https://steamcommunity.com/groups/Original_Traders_Group/comments"
+                ],
+                "threads": [
+                    "https://steamcommunity.com/groups/CSGOTrader/discussions",
+                    "https://steamcommunity.com/groups/csgolounge/discussions",
+                    "https://steamcommunity.com/groups/freeetrade/discussions",
+                    "https://steamcommunity.com/groups/tradecenter2016/discussions",
+                    "https://steamcommunity.com/groups/Original_Traders_Group/discussions",
+                    "https://steamcommunity.com/app/730/tradingforum/"
+                ]
+            },
+            "autoposter": {
+                "avb": [
+                    "https://steamcommunity.com/groups/CSGOTrader",
+                    "https://steamcommunity.com/groups/freeetrade",
+                    "https://steamcommunity.com/groups/hentaii",
+                    "https://steamcommunity.com/groups/bitcoin",
+                    "https://steamcommunity.com/groups/CounterStrike-GlobalOffensive",
+                    "https://steamcommunity.com/groups/The-Anime-In-Me",
+                    "https://steamcommunity.com/groups/steamuniverse",
+                    "https://steamcommunity.com/groups/katowicestickerclub",
+                    "https://steamcommunity.com/groups/commend-me"
+                ],
+                "sld": [
+                    "https://steamcommunity.com/groups/CSGOTrader",
+                    "https://steamcommunity.com/groups/freeetrade"
+                ],
+                "group_ids": {
+                    "https://steamcommunity.com/groups/CSGOTrader": "5039367",
+                    "https://steamcommunity.com/groups/freeetrade": "34686423",
+                    "https://steamcommunity.com/groups/hentaii": "",
+                    "https://steamcommunity.com/groups/bitcoin": "2502890",
+                    "https://steamcommunity.com/groups/CounterStrike-GlobalOffensive": "3207860",
+                    "https://steamcommunity.com/groups/The-Anime-In-Me": "4361024",
+                    "https://steamcommunity.com/groups/steamuniverses": "5151157",
+                    "https://steamcommunity.com/groups/katowicestickerclub": "8814852",
+                    "https://steamcommunity.com/groups/commend-me": ""
+                }
+            }
+        }
+    },
+    "api_method": "steamapis.com",
+    "bitskins": {
+        "api_key_bitskins": "",
+        "api_secret": ""
+    },
+    "steamapis": {
+        "api_key": "",
+        "price_metric_my": "safe",
+        "price_metric_partner": "safe"
+    },
+    "trades": {
+        "min_margin_downgrade": 1,
+        "max_margin_downgrade": 10,
+        "min_margin_upgrade": 0,
+        "max_margin_upgrade": 4,
+        "max_items_partner": 10,
+        "min_item_price_partner": 1,
+        "trade_message": "Hey, im interested in your items!",
+        "avoid": {
+            "my_inv": [
+                "Souvenir",
+                "Sticker"
+            ],
+            "their_inv": [
+                "Souvenir",
+                "Case"
+            ]
+        }
+    },
+    "poster": {
+        "freq": 1600,
+        "title": "[H] Items [W] Katowice Stickers",
+        "message": "Im searching for Katowice 2019 Stickers(Holos Prefered).\nTradelink in my Bio.\nYou can still give other offers if u find interesting items in my inevntory!\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+    }
+}

@@ -9,6 +9,7 @@ import requests
 from models import SteamUrl
 from utils import get_value_in_nested_dict, resource_path
 import xmltodict
+import random
 
 class AutoPoster:
     
@@ -37,6 +38,7 @@ class AutoPoster:
 
     def postDiscussion(self, urls, title, message):
         for url in urls:
+            time.sleep(random.randint(60, 300)) #dont get blocked for posting frequently 
             o_id = next(get_value_in_nested_dict(self.config, url))
             session_id = self._get_session_id()
             url = 'https://steamcommunity.com/forum/'+o_id+'/General/createtopic/0/'
@@ -51,7 +53,6 @@ class AutoPoster:
           
 
     def _get_session_id(self) -> str:
-        print(self._session.cookies)
         return self._session.cookies.get_dict()['sessionid']
 
     def __readConfig(self, path):

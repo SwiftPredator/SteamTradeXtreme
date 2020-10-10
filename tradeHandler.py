@@ -15,10 +15,10 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-from models import Asset, TradeOfferState, SteamUrl, GameOptions, Currency, PriceAPIEndpoint, InventoryType
+from models import Asset, TradeOfferState, SteamUrl, GameOptions, Currency, PriceAPIEndpoint, InventoryType, TradingStrategy
 from utils import text_between, texts_between, merge_items_with_descriptions_from_inventory, \
     steam_id_to_account_id, merge_items_with_descriptions_from_offers, get_description_key, \
-    merge_items_with_descriptions_from_offer, account_id_to_steam_id, get_key_value_from_url, parse_price, reverseDict, resource_path
+    merge_items_with_descriptions_from_offer, account_id_to_steam_id, get_key_value_from_url, parse_price, reverseDict, resource_path, log_status
 
 class TradeHandler:
 
@@ -26,9 +26,9 @@ class TradeHandler:
         self.config = self.readConfig(config_path)
         self._session = requests.Session()
         self._price_endpoint = api_endpoint
-        self.bitskins_pricelist = self.__getBitskinsPriceList(self.config["bitskins"]["api_key"], self.config["bitskins"]["api_secret"])
-        self.steamapis_pricelist = self.__getSteamPriceAPIPrices(self.config["steamapis"]["api_key"])
+        self._pricelist = self.__createPriceList()
         self._session_tradelinks = []
+        log_status('TradeHandler initialized!')
 
     def readConfig(self, path):
         with open(path) as file:
@@ -47,10 +47,11 @@ class TradeHandler:
             wait = WebDriverWait(self.steamClient, 30)
             wait.until(EC.url_contains("/profiles"))
         except TimeoutException:
-            print("Exception has been thrown. Trying to get cookies anyways. If you have a special id set on your steam it will work anyways")
+            log_status("Exception has been thrown. If you logged in successfully and have a custom id set on your steam it will work anyways.")
         cookies = self.steamClient.get_cookies()
         for cookie in cookies:
             self._session.cookies.set(cookie['name'], cookie['value'])
+        log_status("Login success! Cookies from session saved!")
         self.steamClient.close()
         return self._session
 
@@ -79,57 +80,63 @@ class TradeHandler:
         for ele, value in args:
             self.steamClient.execute_script("arguments[1].value=arguments[0];", str(value), ele)
     
-    def calculateOptimalTrade(self, inv_raw, partner_inv_raw):
+    def calculateOptimalTrade(self, inv_raw, partner_inv_raw, trade_strategy, selected_items=None):
         my_inv = self.__convertRawInventory(inv_raw, InventoryType.MY)
         partner_inv = self.__convertRawInventory(partner_inv_raw, InventoryType.THEIR)
+        
         if partner_inv == None or len(partner_inv) == 0:
-            print("Partner Inevtory empty or something like that")
+            log_status("Partner Inventory empty or something like that")
             return None
+
+        if trade_strategy == TradingStrategy.USER:
+            #Reduce user inventory to selected items
+            if selected_items == None:
+                log_status("No Items selected to trade. Please stop the Bot!")
+                return
+            dcopy = {}
+            for id, _ in my_inv.items():
+                name = self.__get_name_from_itemID(inv_raw, id)
+                if name in selected_items:
+                    dcopy[id] = my_inv[id]
+            my_inv = dcopy
 
         overall_value_my = sum(my_inv.values())
         overall_value_partner = sum(partner_inv.values())
-        max_item_my = max(my_inv.items(), key=operator.itemgetter(1))
-        max_item_partner = max(partner_inv.items(), key=operator.itemgetter(1))
-        max_price_my = max_item_my[1]
-        max_price_partner = max_item_partner[1]
+
+        max_item_my = [max(my_inv.items(), key=operator.itemgetter(1))] if trade_strategy == TradingStrategy.BOT else list(my_inv.items())
+        max_item_partner = [max(partner_inv.items(), key=operator.itemgetter(1))]
+        max_price_my = sum([x[1] for x in max_item_my])
+        max_price_partner = max_item_partner[0][1]
         
-        #print(overall_value_my, overall_value_partner, max_price_my, max_price_partner, self.__get_name_from_itemID(partner_inv_raw, max(partner_inv.items(), key=operator.itemgetter(1))[0]))
         target_price = None 
-        #margin_min = self.config["trades"]["min_margin"] @remove
-        #margin_max = self.config["trades"]["max_margin"] @remove
         working_dict = None
         #look which item should be traded 
         if max_price_my > max_price_partner and overall_value_partner > max_price_my:
             target_price = max_price_my
             working_dict = partner_inv
-            print("Target is in my inventory")
         elif max_price_my < max_price_partner and overall_value_my > max_price_partner:
             target_price = max_price_partner
             working_dict = my_inv
-            print("Target is in partner inventory")
         else:
-            print("No target found")
             return None
 
        
         inv_type = InventoryType.MY  if working_dict == my_inv else InventoryType.THEIR
         sorted_pairs = [(k, v) for k, v in sorted(working_dict.items(), key=lambda item: item[1])]
-        #print(sorted_pairs)
+        
         tradeComb = self.find_closest_sum(sorted_pairs, target_price, inv_type)
         if tradeComb == None:
-            print("No Combo Found")
             return None
         res = {
-            "my_items" : [Asset(x[0], GameOptions.CS) for x in tradeComb] if working_dict == my_inv else [Asset(max_item_my[0], GameOptions.CS)],
-            "their_items" : [Asset(x[0], GameOptions.CS) for x in tradeComb] if working_dict == partner_inv else [Asset(max_item_partner[0], GameOptions.CS)]
-
+            "my_items" : [Asset(x[0], GameOptions.CS) for x in tradeComb] if working_dict == my_inv else [Asset(x[0], GameOptions.CS) for x in max_item_my],
+            "their_items" : [Asset(x[0], GameOptions.CS) for x in tradeComb] if working_dict == partner_inv else [Asset(x[0], GameOptions.CS) for x in max_item_partner]
         }
         return res
 
         
         
         
-    def __convertRawInventory(self, inv, inv_type: InventoryType, bitskins=True):
+    def __convertRawInventory(self, inv, inv_type: InventoryType, custom_api=True):
         res = {}
         inv_key = "my_inv" if inv_type == InventoryType.MY else "their_inv"
         for item in iter(inv.values()):
@@ -141,7 +148,7 @@ class TradeHandler:
             if any(x in name for x in self.config["trades"]["avoid"][inv_key]):
                 continue
             prices = self.fetch_price(name, GameOptions.CS)
-            if not bitskins: 
+            if not custom_api: 
                 time.sleep(3.1) #Steam only accepts 20 requests all 60 seconds
                 if prices == None or "median_price" not in prices:
                     continue
@@ -171,7 +178,7 @@ class TradeHandler:
         min_target = target+((target/100)*self.config["trades"]["min_margin_downgrade"]) \
             if inv_type == InventoryType.THEIR else \
                 target-((target/100)*self.config["trades"]["max_margin_upgrade"])
-        print("Price Targets: ", target, min_target, max_target)
+
         while(1):
             for i in range(0, len(numbers)):
                 res_sum = sum([pair[1] for pair in result])
@@ -194,12 +201,12 @@ class TradeHandler:
  
     def fetch_price(self, item_hash_name: str, game: GameOptions, inventory_type=0,  currency: str = Currency.EURO) -> dict:
         if self._price_endpoint == PriceAPIEndpoint.BITSKINS:
-            for item in self.bitskins_pricelist["prices"]:
+            for item in self._pricelist["prices"]:
                 if item["market_hash_name"] == item_hash_name:
                     return item["price"]
             return None
-        elif self._price_endpoint == PriceAPIEndpoint.STEAMAPIS:
-            for item in self.steamapis_pricelist["data"]:
+        elif self._price_endpoint == PriceAPIEndpoint.STEAMAPIS or self._price_endpoint == PriceAPIEndpoint.INTERN:
+            for item in self._pricelist["data"]:
                 if item["market_hash_name"] == item_hash_name:
                     return item["prices"]["safe"]
         else:
@@ -274,6 +281,13 @@ class TradeHandler:
                 'ready': False
             }
         }
+
+    def __createPriceList(self):
+        if self._price_endpoint == PriceAPIEndpoint.STEAMAPIS:
+            return self.__getSteamPriceAPIPrices(self.config["steamapis"]["api_key"])
+        elif self._price_endpoint == PriceAPIEndpoint.INTERN:
+            with open(resource_path('pricelist.json')) as file:
+                return json.load(file)
 
     def _get_session_id(self) -> str:
         return self._session.cookies.get_dict()['sessionid']
