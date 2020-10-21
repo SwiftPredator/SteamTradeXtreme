@@ -61,8 +61,11 @@ class Scraper:
                             trade_link = trade_info.find('a', class_='bb_link')
                             if trade_link and trade_link["href"].find('https://steamcommunity.com/tradeoffer/') != -1:
                                 #print(trade_link["href"])
-                                steam_id = account_id_to_steam_id(text_between(trade_link["href"], '?partner=', '&'))
-                                res[steam_id] = trade_link["href"]
+                                try:
+                                    steam_id = account_id_to_steam_id(text_between(trade_link["href"], '?partner=', '&'))
+                                    res[steam_id] = trade_link["href"]
+                                except:
+                                    continue
         return res
   
     def __get_trade_urls_CS_main_trade_discussion(self, url, soup):

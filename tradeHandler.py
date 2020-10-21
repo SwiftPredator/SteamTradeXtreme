@@ -41,7 +41,7 @@ class TradeHandler:
             self.steamClient.get(login_data["url"])
             ele_username = self.steamClient.find_element_by_id(login_data["username_id"])
             ele_password = self.steamClient.find_element_by_id(login_data["password_id"])
-            ele_login = self.steamClient.find_element_by_id(login_data["login_button_id"])
+            ele_login = self.steamClient.find_element_by_class_name(login_data["login_button_class"])
             self.driverSetValuesInput((ele_username, login_data["username"]), (ele_password, login_data["password"]))
             ele_login.click()
             wait = WebDriverWait(self.steamClient, 30)

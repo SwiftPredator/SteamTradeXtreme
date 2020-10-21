@@ -31,7 +31,7 @@ class GUI():
                 [sg.Multiline(self.__getTextFromConfig('trade_message'), size=(100, 4), key='_trade_message')],
                 [sg.HorizontalSeparator(pad=None)],
                 [sg.Text('Information-Output:', size=(50, 2))],
-                [sg.Output(size=(100, 20))],
+                #[sg.Output(size=(100, 20))],
                 [sg.Button('START', disabled=True, button_color=(sg.YELLOWS[0], sg.BLUES[0])),
                 sg.Button('STOP', disabled=True, button_color=(sg.YELLOWS[0], sg.GREENS[0]))]
                 ]
