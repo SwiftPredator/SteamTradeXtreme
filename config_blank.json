@@ -6,9 +6,9 @@
             "username": "",
             "password": "",
             "url": "https://steamcommunity.com/login/home/",
-            "username_id": "steamAccountName",
-            "password_id": "steamPassword",
-            "login_button_id": "SteamLogin"
+            "username_id": "input_username",
+            "password_id": "input_password",
+            "login_button_class": "login_btn"
         }
     },
     "groups": {
