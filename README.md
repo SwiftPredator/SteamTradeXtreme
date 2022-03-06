@@ -5,11 +5,6 @@ This software can automatically find and calculate fitting trades for YOUR needs
 
 ## Installation 
 
-### Executable versions are avaible under the following links:
-
-[Windows](http://ostsee-fewo-heinemeyer.de/science/SteamTradeXtreme_winx64)
-[Mac/Linux](http://ostsee-fewo-heinemeyer.de/science/SteamTradeXtreme_unix)
-
 If you like to compile the program from source, you can clone this project. 
 You should install the requirements from the ```requirements.txt``` with ```pip```.
 The progam can be compiled with the following command:
